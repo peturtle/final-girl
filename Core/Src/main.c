@@ -2,10 +2,13 @@
 #include "i2c1.c"            
 #include "ssd1306.c"         
 #include "oled_dma.c"        
-#include "font5x7.c"         
+#include "font5x7.c"
+#include  "font4x6.c"         
 #include "graphics.c"             
-#include "input_controls.c"  
-#include "scene.c"           
+#include "input_controls.c"
+#include "nav_helpers.c"
+#include "scene.c"     
+#include "static_components.c"
 
 // arm-none-eabi-gcc is the compiler
 // STM32_Programmer_CLI is the programmer executable
@@ -165,7 +168,7 @@ int main(void)
   oled_init();                       // sets up i2c, dma, and oled
   while(oled_init_complete == 0U);   // wait for oled to finish initialization
   
-  example_scene_init();              // draws static background once into the back buffer
+  static_components();              // draws static background once into the back buffer
   while (1)
   {
     scene_tick();                    // render and push frames at 40 fps

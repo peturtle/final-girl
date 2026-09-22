@@ -6,6 +6,8 @@
 #define OLED_HEIGHT   64
 #define OLED_PAGES    8
 #define OLED_FB_BYTES ((OLED_WIDTH * OLED_HEIGHT) / 8U)  // 1024 bytes per full frame
+#define DISPLAY_AREA_HEIGHT 47
+
 
 // DMA config defines
 #define OLED_DMA_CHANNEL           GPDMA1_Channel7         // oled i2c dma gets channel 7

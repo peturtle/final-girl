@@ -1,5 +1,10 @@
 #include "main.h"
 
+#define LIGHT         1
+#define DARK          0
+#define SMALL         1
+#define LARGE         0
+
 static uint8_t *gfx_px(uint8_t x, uint8_t y)
 {
   return frame_buffer[back] + (y >> 3) * OLED_WIDTH + x;
@@ -60,26 +65,40 @@ static void gfx_fill_rect(uint8_t x0, uint8_t y0, uint8_t w, uint8_t h, uint8_t 
 }
 
 // draw text from our font5x7.c 
-static void gfx_text(uint8_t x, uint8_t y, const char *text)
+static void gfx_text(uint8_t x, uint8_t y, const char *text, uint8_t light, uint8_t small)
 {
   const uint8_t *character;
-  uint8_t col, row;
+  uint8_t col, row, w, h, adv;
 
   while (*text != 0)
   {
-    character = font5x7[*text++]; // column data for this char, then step the string
+    if (small)
+    {
+      w = FONT_W_S;
+      h = FONT_H_S;
+      character = font4x6[*text++];
+    }
+    else
+    {
+      w = FONT_W_L;
+      h = FONT_H_L;
+      character = font5x7[*text++]; // column data for this char, then step the string
+    }
 
-    for (col = 0; col < FONT_W; col++)
+    for (col = 0; col < w; col++)
     {
       if (x + col >= OLED_WIDTH) break; // ran off the right edge
 
-      for (row = 0; row < FONT_H; row++)
+      for (row = 0; row < h; row++)
       {
         if (y + row >= OLED_HEIGHT) break; // ran off the bottom edge
 
-        gfx_pixel(x + col, y + row, character[col] & (1 << row)); // draw the pixel
+        if (light)
+          gfx_pixel(x + col, y + row, character[col] & (1 << row)); // draw the pixel
+        else
+          gfx_pixel(x + col, y + row, !(character[col] & (1 << row))); // draw the pixel
       }
     }
-    x += FONT_ADV;                // leaves room for the next character
+    x += w+1;                // leaves room for the next character
   }
 }

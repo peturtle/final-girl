@@ -1,10 +1,9 @@
 #include "main.h"
 
-#define FONT_W   5 // font width
-#define FONT_H   7 // font height
-#define FONT_ADV 6 // space needed between characters (width + 1)
+#define FONT_W_L   5 // font width
+#define FONT_H_L   7 // font height
 
-static const uint8_t font5x7[128][FONT_W] = {
+static const uint8_t font5x7[128][5] = {
   ['0'] = {0x3E,0x51,0x49,0x45,0x3E},
   ['1'] = {0x00,0x42,0x7F,0x40,0x00},
   ['2'] = {0x42,0x61,0x51,0x49,0x46},
