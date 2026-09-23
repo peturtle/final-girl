@@ -3,6 +3,7 @@
 !/Core
 !/Drivers
 !/Makefile
+!/scripts
 !/*.ld
 !/*.s
 !/.gitignore

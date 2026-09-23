@@ -3,12 +3,13 @@
 #include "ssd1306.c"         
 #include "oled_dma.c"        
 #include "font5x7.c"
-#include  "font4x6.c"         
+#include "font4x6.c"         
 #include "graphics.c"             
 #include "input_controls.c"
 #include "nav_helpers.c"
 #include "scene.c"     
 #include "static_components.c"
+#include "pcm5242.c"         
 
 // arm-none-eabi-gcc is the compiler
 // STM32_Programmer_CLI is the programmer executable
@@ -24,23 +25,56 @@ static void MX_ICACHE_Init(void);
 // CubeMX generated functions
 
 /// configures our gpio
-void gpio_init(void)
+void debug_io(void)
 {
-  // Enable clk access to all 3 gpio banks-- A, B, and C
-  RCC->AHB2ENR |= (RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIOBEN | RCC_AHB2ENR_GPIOCEN);
-
   // GPIO C3 output heartbeat led
   GPIOC->MODER   = (GPIOC->MODER & ~(3UL << (2U * 3U))) | (1UL << (2U * 3U));
   GPIOC->OSPEEDR = (GPIOC->OSPEEDR & ~(3UL << (2U * 3U))) | (1UL << (2U * 3U));
   GPIOC->PUPDR   &= ~(3UL << (2U * 3U)); // clear for no pull up/down resistor
   GPIOC->ODR     &= ~(1UL << 3U);   // clear pin reset state.
+}
+void pcm5242_io(void)
+{
+  // I2S pins use OSPEEDR=2 ("high"), not 3 ("very high"): the slower edges cut the EMI/ringing
+  // that made the 375 Hz tone look jittery/noisy on the breadboard (isolated by test - OSPEEDR is the fix).
 
-  // GPIO A5 output debug led
-  GPIOA->MODER   = (GPIOA->MODER & ~(3UL << (2U * 5U))) | (1UL << (2U * 5U));
-  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 5U))) | (1UL << (2U * 5U));
-  GPIOA->PUPDR   &= ~(3UL << (2U * 5U)); // clear for no pull up/down resistor
-  GPIOA->ODR     &= ~(1UL << 5U);   // clear pin reset state.
+  // A0 af 10 
+  GPIOA->MODER   = (GPIOA->MODER   & ~(3UL << (2U * 0))) | (2UL << (2U * 0));
+  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 0))) | (2UL << (2U * 0));
+  GPIOA->PUPDR   &= ~(3UL << (2U * 0));
+  GPIOA->OTYPER  &= ~(1UL << 0);
+  GPIOA->AFR[0 >> 3U] = (GPIOA->AFR[0 >> 3U] & ~(0xFUL << (4U * (0 & 7U)))) | ((uint32_t)10 << (4U * (0 & 7U)));
 
+  // A1 af 6 
+  GPIOA->MODER   = (GPIOA->MODER   & ~(3UL << (2U * 1))) | (2UL << (2U * 1));
+  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 1))) | (2UL << (2U * 1));
+  GPIOA->PUPDR   &= ~(3UL << (2U * 1));
+  GPIOA->OTYPER  &= ~(1UL << 1);
+  GPIOA->AFR[1 >> 3U] = (GPIOA->AFR[1 >> 3U] & ~(0xFUL << (4U * (1 & 7U)))) | ((uint32_t)6 << (4U * (1 & 7U)));
+
+  // a3 af 6
+  GPIOA->MODER   = (GPIOA->MODER   & ~(3UL << (2U * 3))) | (2UL << (2U * 3));
+  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 3))) | (2UL << (2U * 3));
+  GPIOA->PUPDR   &= ~(3UL << (2U * 3));
+  GPIOA->OTYPER  &= ~(1UL << 3);
+  GPIOA->AFR[3 >> 3U] = (GPIOA->AFR[3 >> 3U] & ~(0xFUL << (4U * (3 & 7U)))) | ((uint32_t)6 << (4U * (3 & 7U)));
+
+  // a7 af 10
+  GPIOA->MODER   = (GPIOA->MODER   & ~(3UL << (2U * 7))) | (2UL << (2U * 7));
+  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 7))) | (2UL << (2U * 7));
+  GPIOA->PUPDR   &= ~(3UL << (2U * 7));
+  GPIOA->OTYPER  &= ~(1UL << 7);
+  GPIOA->AFR[7 >> 3U] = (GPIOA->AFR[7 >> 3U] & ~(0xFUL << (4U * (7 & 7U)))) | ((uint32_t)10 << (4U * (7 & 7U)));
+
+  // a2 xsmt mute control
+  GPIOA->MODER   = (GPIOA->MODER   & ~(3UL << (2U * 2))) | (1UL << (2U * 2));
+  GPIOA->OSPEEDR = (GPIOA->OSPEEDR & ~(3UL << (2U * 2))) | (1UL << (2U * 2));
+  GPIOA->PUPDR  &= ~(3UL << (2U * 2));
+  GPIOA->BRR     = (1UL << 2); // set pin low
+}
+void pcm1822_io(void){}
+void oled_io(void)
+{
   // I2C1_SDA on PB10, alternate function 11
   GPIOB->MODER   = (GPIOB->MODER & ~(3UL << (2U * 10U))) | (2UL << (2U * 10U)); // Set pin to af mode
   GPIOB->OTYPER  |= (1UL << 10U);   // open-drain
@@ -54,7 +88,9 @@ void gpio_init(void)
   GPIOC->OSPEEDR &= ~(3UL << (2U * 8U));
   GPIOC->PUPDR   &= ~(3UL << (2U * 8U)); // no pull up or down
   GPIOC->AFR[1]  = (GPIOC->AFR[1] & ~(0xFUL << (4U * (8U - 8U))))  | (0x4UL << (4U * (8U - 8U)));   // Set to AF4
-
+}
+void inputs_io(void)
+{
   // encoder 1: A PC0, B PC1, switch PC2
   GPIOC->MODER   &= ~(3UL << (2U * 0U));  // input mode
   GPIOC->OSPEEDR &= ~(3UL << (2U * 0U));
@@ -127,6 +163,17 @@ void gpio_init(void)
   GPIOA->OSPEEDR &= ~(3UL << (2U * 10U));
   GPIOA->PUPDR    = (GPIOA->PUPDR & ~(3UL << (2U * 10U))) | (1UL << (2U * 10U)); // pull-up
 }
+void gpio_init(void)
+{
+  // Enable clk access to all 3 gpio banks
+  RCC->AHB2ENR |= (RCC_AHB2ENR_GPIOAEN | RCC_AHB2ENR_GPIOBEN | RCC_AHB2ENR_GPIOCEN);
+
+  debug_io();       // one debug led is here getting used as a tim6 led toggle
+  oled_io();       // i2c pins for the OLED
+  inputs_io();    // gpio for encoders and buttons
+  pcm5242_io();  // i2s pins and mute control pin for dac
+  pcm1822_io(); // i2s pins for adc
+}
 
 // sets up timer 6 which we use to trigger interupts that poll our inputs (encoders + buttons)
 void tim6_init(void)
@@ -161,17 +208,24 @@ int main(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0U, 0U);
   SystemClock_Config();
   MX_ICACHE_Init();
+  // HAL stuff done
 
+  // our stuff
   gpio_init();                       // heartbeat/debug LEDs, I2C SDA/SCL, all the inputs
   inputs_init();                     // sets known value for inputs 
   tim6_init();                       // 1 kHz timer interrupt
   oled_init();                       // sets up i2c, dma, and oled
   while(oled_init_complete == 0U);   // wait for oled to finish initialization
   
+  pcm5242_init();                    // I2S3 master + PCM5242 gpio
+  pcm5242_unmute();                  // XSMT high -> unmute
+  pcm5242_tone_start();              // start the SPI tx
+
   static_components();              // draws static background once into the back buffer
+
   while (1)
   {
-    scene_tick();                    // render and push frames at 40 fps
+    scene_tick();
   }
 }
 
