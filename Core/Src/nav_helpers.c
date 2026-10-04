@@ -2,6 +2,7 @@
 
 bool l_p = false; 
 bool r_p = false;
+bool e_p = false;
 bool enc1_p = false;
 bool enc2_p = false;
 bool enc3_p = false;
@@ -14,6 +15,11 @@ void left_press_listener(void (*callback)()) {
 void right_press_listener(void (*callback)()) {
     if (!tact3_level && !r_p) callback();
     r_p = !tact3_level;
+}
+
+void enter_press_listener(void (*callback)()) {
+    if (!tact4_level && !e_p) callback();
+    e_p = !tact4_level;
 }
 
 void enc1_press_listener(void (*callback)()) {
